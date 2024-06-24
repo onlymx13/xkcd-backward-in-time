@@ -1,17 +1,22 @@
 {
   "devDependencies": {
+    "@types/node": "^20.14.8",
     "typescript": "^5.5.2"
   },
   "name": "xkcd-backward-in-time",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "build": "cp index.html build/ && tsc",
-    "clean": "rm -rf build",
-    "open": "sensible-browser $(wslpath -w \"build/index.html\")",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "vite": "vite"
   },
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "@types/date-fns": "^2.6.0",
+    "date-fns": "^3.6.0",
+    "vite": "^5.3.1"
+  }
 }

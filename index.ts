@@ -1,5 +1,14 @@
 "use strict";
 
+const EARLIEST_VALID_DATE = -8640000000000000n;
+
+const MS_PER_SEC = 1000;
+const SEC_PER_MIN = 60;
+const MIN_PER_HR = 60;
+const HR_PER_DAY = 24;
+const SEC_PER_DAY = SEC_PER_MIN * MIN_PER_HR * HR_PER_DAY;
+const DAYS_PER_YR = 365.2425;
+
 /*
 BigInt absolute value
 */
@@ -26,7 +35,7 @@ class MyDate {
     Throws RangeError if the date is out of range.
     */
     toDate(): Date {
-        if (abs(this.#ms) > Number.MAX_SAFE_INTEGER) {
+        if (abs(this.#ms) > abs(EARLIEST_VALID_DATE)) {
             throw(RangeError("Attempted to call toDate on date outside of safe range (kind 1)"));
         }
         const ms = Number(this.#ms);
@@ -43,14 +52,45 @@ class MyDate {
     Call as MyDate.fromDate(d).
     */
     static fromDate(d: Date) : MyDate {
-        const newMyDate = new MyDate(0n);
-        newMyDate.#ms = BigInt(d.getTime());
-        return newMyDate;
+        return new MyDate(BigInt(d.getTime()));
     }
 
     static msBetween(d1: MyDate, d2: MyDate) : bigint {
         return d2.#ms - d1.#ms;
     }
+
+    addMs(ms: bigint) {
+        return new MyDate(this.#ms + ms);
+    }
+
+    /*
+    toString
+    TODO: will throw if toDate throws
+    */
+    toString() : string {
+        try {
+            return this.toDate().toString();
+        } catch (e) {
+            if (e instanceof RangeError) {
+                return `MyDate with ${this.#ms} ms`;
+            } else {
+                throw(e);
+            }
+        }
+    }
+}
+
+function updateHtmlFromValues(ms: bigint): void {
+    const remainingDaysElement = document.getElementById("remaining-days")!;
+    const remainingHoursElement = document.getElementById("remaining-hours")!;
+    const remainingMinutesElement = document.getElementById("remaining-minutes")!;
+    const remainingSecondsElement = document.getElementById("remaining-seconds")!;
+
+    dateFns.intervalToDuration({
+        start: new Date(1929, 0, 15, 12, 0, 0),
+        end: new Date(1968, 3, 4, 19, 5, 0)
+      })
+
 }
 
 const startDate = MyDate.fromDate(new Date(Date.UTC(2024, 5, 22, 12, 57))); // June 22, 2024 12:57:00 UTC
@@ -66,8 +106,10 @@ const big = Number.MAX_SAFE_INTEGER;
 const p = Number(MyDate.msBetween(startDate, now) * BigInt(big) / MyDate.msBetween(startDate, endDate)) / big;
 
 // Calculate T from the formula in the xkcd comic.
-// T is a positive value in years.
+// T is a positive value in years, according to the comic.
 const T = Math.exp(20.3444 * (p * p * p) + 3) - Math.exp(3);
+// Since years don't really make sense here, we convert this value to ms.
+const T_ms = BigInt(Math.round(T * DAYS_PER_YR * SEC_PER_DAY * MS_PER_SEC));
 
 console.log(
 `
@@ -75,6 +117,7 @@ console.log(
     end: ${endDate}
     now: ${now}
     p = ${p}
-    T = ${T}
-    curr = ${add(now, {years: -T})}
+    T = ${T} years
+      = ${T_ms} ms
+    curr = ${now.addMs(-T_ms)}
 `);
