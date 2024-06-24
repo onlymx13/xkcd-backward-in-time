@@ -47,8 +47,34 @@ class MyDate {
         newMyDate.#ms = BigInt(d.getTime());
         return newMyDate;
     }
+
+    static msBetween(d1: MyDate, d2: MyDate) : bigint {
+        return d2.#ms - d1.#ms;
+    }
 }
 
-const startDate = MyDate.fromDate(new Date(Date.UTC(2024, 5, 22, 12, 57)));
+const startDate = MyDate.fromDate(new Date(Date.UTC(2024, 5, 22, 12, 57))); // June 22, 2024 12:57:00 UTC
 
-console.log(startDate.toDate());
+const endDate = MyDate.fromDate(new Date(Date.UTC(2025, 0, 10, 0, 17))); // January 10, 2024 00:17:00 UTC
+
+const now = MyDate.fromDate(new Date());
+
+const big = Number.MAX_SAFE_INTEGER;
+// Calculate p, the percentage of the time that we have made it through so far
+// Assuming we are in the timeframe specified,
+// p is an ordinary number in [0, 1].
+const p = Number(MyDate.msBetween(startDate, now) * BigInt(big) / MyDate.msBetween(startDate, endDate)) / big;
+
+// Calculate T from the formula in the xkcd comic.
+// T is a positive value in years.
+const T = Math.exp(20.3444 * (p * p * p) + 3) - Math.exp(3);
+
+console.log(
+`
+    start: ${startDate}
+    end: ${endDate}
+    now: ${now}
+    p = ${p}
+    T = ${T}
+    curr = ${add(now, {years: -T})}
+`);
