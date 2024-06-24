@@ -1,0 +1,17 @@
+{
+  "devDependencies": {
+    "typescript": "^5.5.2"
+  },
+  "name": "xkcd-backward-in-time",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "cp index.html build/ && tsc",
+    "clean": "rm -rf build",
+    "open": "sensible-browser $(wslpath -w \"build/index.html\")",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
