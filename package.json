@@ -1,13 +1,16 @@
 {
   "devDependencies": {
     "@types/node": "^20.14.8",
-    "typescript": "^5.5.2"
+    "typescript": "^5.5.2",
+    "vite": "^4.5.3"
   },
   "name": "xkcd-backward-in-time",
   "version": "1.0.0",
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "clean_assets": "rm -rf \"History of the Earth [Q1OreyX0-fw].webm\" \"assets/earth_images\"",
+    "build_assets": "tools/build_assets.sh",
     "test": "echo \"Error: no test specified\" && exit 1",
     "vite": "vite"
   },
@@ -16,7 +19,6 @@
   "description": "",
   "dependencies": {
     "@types/date-fns": "^2.6.0",
-    "date-fns": "^3.6.0",
-    "vite": "^5.3.1"
+    "date-fns": "^3.6.0"
   }
 }
