@@ -116,9 +116,15 @@ function mya_to_image_number(mya: number): number {
 function updateEarthImage(yearsAgo: number): void {
     const earthImage = document.getElementById("earth-image")! as HTMLImageElement;
     const mya = yearsAgo / 1_000_000;
-    if (mya > 4540) {
+    if (mya < 0.02) {
+        // At 20,000 years ago, begin teasing the continents with the Earth image.
+        // It won't actually change until 100,000 years ago.
+        // Man, this is such a sick feature.
+        lastClosestImage = -2;
+        earthImage.src = "";
+    } else if (mya > 4540) {
         if (lastClosestImage !== -2) {
-            //TODO Handle the Earth not existing
+            //TODO Handle the Earth not existing (idk show a picture of the solar system or smth)
             lastClosestImage = -2;
             earthImage.src = "";
             //throw(new RangeError("Tried to get image of an Earth that does not exist"));
