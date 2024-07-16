@@ -9,6 +9,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "check": "tsc --noEmit",
     "clean_assets": "rm -rf \"History of the Earth [Q1OreyX0-fw].webm\" \"assets/earth_images\"",
     "build_assets": "tools/build_assets.sh",
     "test": "echo \"Error: no test specified\" && exit 1",

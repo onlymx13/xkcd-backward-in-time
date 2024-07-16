@@ -11,6 +11,7 @@ const DAYS_PER_YR = 365.2425;
 const MS_PER_YR = MS_PER_SEC * SEC_PER_DAY * DAYS_PER_YR;
 
 import { intervalToDuration, Duration, differenceInDays, differenceInHours, differenceInMinutes, differenceInSeconds, formatDuration, addDays, yearsToDays, Interval } from "date-fns";
+import { execPath } from "process";
 
 /*
 BigInt absolute value
@@ -113,6 +114,54 @@ function mya_to_image_number(mya: number): number {
     }
 }
 
+const NUM_CURR_EVENTS = 10;
+async function updateCurrentEvents(now: Date, T_ms: bigint): Promise<void> {
+    // Show current events within [now - 1.1 T, now - 0.9 T]
+    const begin_ = MyDate.fromDate(now).addMs(-11n * T_ms / 10n);
+    const end_ = MyDate.fromDate(now).addMs(-9n * T_ms / 10n);
+    try {
+        const begin = begin_.toDate();
+        const end = end_.toDate();
+
+        // modified from https://www.reddit.com/r/datasets/comments/cho4lq/comment/ev2m9tz/
+        const query = 
+            `select ?event ?date ?label ?article_en {
+                ?event wdt:P31/wdt:P279* wd:Q1190554 .  # something that is a subtype of occurence
+                ?event wdt:P585 ?time .   # and happened on date date (note this only takes events with a point of time, not with a start and end date)
+                filter(?time > "${begin.toISOString()}"^^xsd:dateTime)  # and that date is after begin
+                filter(?time < "${end.toISOString()}"^^xsd:dateTime)  # but before end
+                ?event rdfs:label ?label .  # get the name
+                filter(lang(?label) = 'en')  # but only the English one
+                
+                ?article_en schema:about ?event ; schema:isPartOf <https://en.wikipedia.org/> .  # only if it has a Wikipedia article
+                #  ?article_ru schema:about ?event ; schema:isPartOf <https://ru.wikipedia.org/> .  # adding these leads to time outs for me, but can add more importance filter
+                #  ?article_zh schema:about ?event ; schema:isPartOf <https://zh.wikipedia.org/> .
+                #  ?article_ar schema:about ?event ; schema:isPartOf <https://ar.wikipedia.org/> .
+            } limit ${NUM_CURR_EVENTS}  # to avoid timeout, I only ask for NUM_CURR_EVENTS`;
+        fetch(`https://query.wikidata.org/sparql?format=json&query=${encodeURIComponent(query)}`).then(response => response.json()).then(
+            json => {
+                const currEventsList = document.getElementById("current-events-list")! as HTMLUListElement;
+                while (currEventsList.firstChild) {
+                    currEventsList.removeChild(currEventsList.firstChild);
+                }
+                for (const event of json["results"]["bindings"]) {
+                    const li = document.createElement("li");
+                    li.textContent = event["label"]["value"];
+                    currEventsList.appendChild(li);
+                    //TODO: include the date of the event and an excerpt from the Wikipedia article (prob MediaWiki api for that)
+                }
+            }
+        );
+    } catch(e) {
+        if (e instanceof RangeError) {
+            // Dates are too far away to bother with current events at the moment
+            return;
+        } else {
+            throw(e);
+        }
+    }
+}
+
 function updateEarthImage(yearsAgo: number): void {
     const earthImage = document.getElementById("earth-image")! as HTMLImageElement;
     const mya = yearsAgo / 1_000_000;
@@ -159,7 +208,7 @@ nowSlider.value = (new Date()).getTime().toString();
         if (lastInterval) {
             clearInterval(lastInterval);
         }
-        lastInterval = setInterval(() => nowSlider.value = (Number(nowSlider.value) + 100).toString(), 100);
+        lastInterval = setInterval(() => nowSlider.value = (Number(nowSlider.value) + 10).toString(), 10);
     } else {
         if (lastInterval) {
             clearInterval(lastInterval);
@@ -183,6 +232,8 @@ function formatNumberOfYears(num: number): string {
     }
 }
 
+let currEventsLastUpdated = new Date(0); // a long time ago
+
 function update() {
     const now = getNow();
 
@@ -195,9 +246,14 @@ function update() {
     // T is a positive value in years, according to the comic.
     const T = Math.exp(20.3444 * (p * p * p) + 3) - Math.exp(3);
     // Since years don't really make sense here, we convert this value to ms.
-    //! TODO: won't this lose a lot of precision as written? do better
-    // since T is a decimal
-    const T_ms = BigInt(Math.round(T * DAYS_PER_YR * SEC_PER_DAY * MS_PER_SEC));
+    // Try to avoid floating-point imprecision by considering the integer and fractional
+    // parts of T separately. Use BigInt arithmetic for the integer parts.
+    //TODO is this necessary?
+    const T_integer = Math.floor(T);
+    const T_frac = T % 1;
+    const T_ms_int = BigInt(T_integer) * BigInt(DAYS_PER_YR * SEC_PER_DAY * MS_PER_SEC);
+    const T_ms_frac = T_frac * DAYS_PER_YR * SEC_PER_DAY * MS_PER_SEC;
+    const T_ms = T_ms_int + BigInt(Math.round(T_ms_frac));
 
     const xkcdDate = MyDate.fromDate(now).addMs(-T_ms);
 
@@ -240,6 +296,10 @@ function update() {
     updateRemainingTime(days, hours, minutes, seconds);
     updateXkcdDate(xkcdDate);
     updateTimeAgo(timeAgo);
+    if ((now.getTime() - currEventsLastUpdated.getTime()) > MS_PER_SEC * SEC_PER_MIN * 5) { // Every 5 minutes
+        currEventsLastUpdated = now;
+        updateCurrentEvents(now, T_ms);
+    }
     updateEarthImage(T);
 
     requestAnimationFrame(update);
