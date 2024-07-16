@@ -8,10 +8,8 @@ const MIN_PER_HR = 60;
 const HR_PER_DAY = 24;
 const SEC_PER_DAY = SEC_PER_MIN * MIN_PER_HR * HR_PER_DAY;
 const DAYS_PER_YR = 365.2425;
-const MS_PER_YR = MS_PER_SEC * SEC_PER_DAY * DAYS_PER_YR;
 
-import { intervalToDuration, Duration, differenceInDays, differenceInHours, differenceInMinutes, differenceInSeconds, formatDuration, addDays, yearsToDays, Interval } from "date-fns";
-import { execPath } from "process";
+import { intervalToDuration, differenceInDays, differenceInHours, differenceInMinutes, differenceInSeconds, formatDuration } from "date-fns";
 
 /*
 BigInt absolute value
