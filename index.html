@@ -4,21 +4,26 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div>
-        <p>Set Now</p>
-        <input type="checkbox" id="use-set-now"></input>
-        <input type="range" min="-500" max="500" id="set-now"></input>
-        <p id="curr-now"></p>
-    </div>
-    <table id="remaining-time-table">
-    <tbody>
-        <tr><td id="remaining-days"></td><td id="remaining-hours"></td><td id="remaining-minutes"></td><td id="remaining-seconds"></td></tr>
-        <tr><td>Days</td><td>Hours</td><td>Minutes</td><td>Seconds</td></tr>
-    </tbody>
-    </table>
-    <p id="date"></p>
-    <p id="time-ago"></p>
+    <div id="left-side-wrapper">
+        <div>
+            <label for="set-now">Set Now</label>
+            <br>
+            <input type="checkbox" id="use-set-now"></input>
+            <input type="range" min="-500" max="500" id="set-now"></input>
+            <p id="curr-now"></p>
+        </div>
+        <table id="remaining-time-table">
+        <tbody>
+            <tr><td id="remaining-days"></td><td id="remaining-hours"></td><td id="remaining-minutes"></td><td id="remaining-seconds"></td></tr>
+            <tr><td>Days</td><td>Hours</td><td>Minutes</td><td>Seconds</td></tr>
+        </tbody>
+        </table>
+        <p id="date"></p>
+        <p id="time-ago"></p>
 
+        <img id="earth-image" height="300px"></img>
+
+    </div>
     <div id="current-events">
         <h2>Around this time:</h2>
         <ul id="current-events-list">
@@ -26,10 +31,6 @@
         </ul>
     </div>
 
-    <img id="earth-image" height="300px"></img>
-    <!--
-    <script src="http://cdn.date-fns.org/v1.9.0/date_fns.min.js"></script>
-    -->
     <script type="module" src="index.ts"></script>
 </body>
 </html>

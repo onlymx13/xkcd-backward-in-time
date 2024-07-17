@@ -67,7 +67,7 @@ class MyDate {
 
     /*
     toString
-    TODO: will throw if toDate throws
+    will throw if toDate throws
     */
     toString() : string {
         try {
@@ -136,6 +136,7 @@ async function updateCurrentEvents(now: Date, T_ms: bigint): Promise<void> {
                 #  ?article_zh schema:about ?event ; schema:isPartOf <https://zh.wikipedia.org/> .
                 #  ?article_ar schema:about ?event ; schema:isPartOf <https://ar.wikipedia.org/> .
             } limit ${NUM_CURR_EVENTS}  # to avoid timeout, I only ask for NUM_CURR_EVENTS`;
+        //TODO this query times out sometimes
         fetch(`https://query.wikidata.org/sparql?format=json&query=${encodeURIComponent(query)}`).then(response => response.json()).then(
             json => {
                 const currEventsList = document.getElementById("current-events-list")! as HTMLUListElement;
@@ -144,9 +145,23 @@ async function updateCurrentEvents(now: Date, T_ms: bigint): Promise<void> {
                 }
                 for (const event of json["results"]["bindings"]) {
                     const li = document.createElement("li");
-                    li.textContent = event["label"]["value"];
+                    const p = document.createElement("p");
+                    p.textContent = event["label"]["value"];
+                    const p2 = document.createElement("p");
+                    p2.textContent = "Loading description...";
+                    li.appendChild(p);
+                    li.appendChild(p2);
                     currEventsList.appendChild(li);
-                    //TODO: include the date of the event and an excerpt from the Wikipedia article (prob MediaWiki api for that)
+                    const wikipedia_url = event["article_en"]["value"].split("/");
+                    const wikipedia_name = wikipedia_url[wikipedia_url.length - 1];
+                    // Get an excerpt from the Wikipedia article
+                    const api_url = `https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&origin=*&titles=${wikipedia_name}`;
+                    fetch(api_url).then(response => response.json()).then(json => {
+                        const pages = json["query"]["pages"];
+                        // pages is an object with a single property. access it
+                        p2.textContent = pages[Object.getOwnPropertyNames(pages)[0]]["extract"];
+                    });
+                    //TODO: css
                 }
             }
         );
@@ -222,7 +237,14 @@ function formatNumberOfYears(num: number): string {
     if (num < 1_000) {
         return `${num} years`;
     } else if (num < 1_000_000) {
-        return `${Math.floor(num / 1000)},${(num % 1000).toString().padStart(3, '0')} years`;
+        // do in form XXX, XXX.XXXX... years ago
+        // pad start with the proper number of zeroes
+        const mod_1000 = num % 1000;
+        return `${Math.floor(num / 1000)},${
+            (mod_1000 < 10 ? "00" : (
+                mod_1000 < 100 ? "0" : ""
+            ))
+        }${mod_1000} years`;
     } else if (num < 1_000_000_000) {
         return `${num / 1_000_000} million years`;
     } else {

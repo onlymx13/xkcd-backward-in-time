@@ -1,3 +1,12 @@
 #set-now {
     width: 500px;
 }
+
+#left-side-wrapper {
+    float: left;
+}
+
+#current-events {
+    float: right;
+    width: 50%;
+}
