@@ -8,6 +8,7 @@ const MIN_PER_HR = 60;
 const HR_PER_DAY = 24;
 const SEC_PER_DAY = SEC_PER_MIN * MIN_PER_HR * HR_PER_DAY;
 const DAYS_PER_YR = 365.2425;
+const MS_PER_YEAR = MS_PER_SEC * SEC_PER_DAY * DAYS_PER_YR;
 
 import { intervalToDuration, differenceInDays, differenceInHours, differenceInMinutes, differenceInSeconds, formatDuration } from "date-fns";
 
@@ -115,15 +116,15 @@ function mya_to_image_number(mya: number): number {
 const NUM_CURR_EVENTS = 10;
 async function updateCurrentEvents(now: Date, T_ms: bigint): Promise<void> {
     // Show current events within [now - 1.1 T, now - 0.9 T]
-    const begin_ = MyDate.fromDate(now).addMs(-11n * T_ms / 10n);
-    const end_ = MyDate.fromDate(now).addMs(-9n * T_ms / 10n);
+    const begin_ = MyDate.fromDate(now).addMs(-105n * T_ms / 100n);
+    const end_ = MyDate.fromDate(now).addMs(-95n * T_ms / 100n);
     try {
         const begin = begin_.toDate();
         const end = end_.toDate();
 
         // modified from https://www.reddit.com/r/datasets/comments/cho4lq/comment/ev2m9tz/
         const query = 
-            `select ?event ?date ?label ?article_en {
+            `select distinct ?event ?date ?label ?article_en {
                 ?event wdt:P31/wdt:P279* wd:Q1190554 .  # something that is a subtype of occurence
                 ?event wdt:P585 ?time .   # and happened on date date (note this only takes events with a point of time, not with a start and end date)
                 filter(?time > "${begin.toISOString()}"^^xsd:dateTime)  # and that date is after begin
@@ -132,9 +133,9 @@ async function updateCurrentEvents(now: Date, T_ms: bigint): Promise<void> {
                 filter(lang(?label) = 'en')  # but only the English one
                 
                 ?article_en schema:about ?event ; schema:isPartOf <https://en.wikipedia.org/> .  # only if it has a Wikipedia article
-                #  ?article_ru schema:about ?event ; schema:isPartOf <https://ru.wikipedia.org/> .  # adding these leads to time outs for me, but can add more importance filter
-                #  ?article_zh schema:about ?event ; schema:isPartOf <https://zh.wikipedia.org/> .
-                #  ?article_ar schema:about ?event ; schema:isPartOf <https://ar.wikipedia.org/> .
+                ?article_ru schema:about ?event ; schema:isPartOf <https://ru.wikipedia.org/> .  # adding these leads to time outs for me, but can add more importance filter
+                ?article_zh schema:about ?event ; schema:isPartOf <https://zh.wikipedia.org/> .
+                ?article_ar schema:about ?event ; schema:isPartOf <https://ar.wikipedia.org/> .
             } limit ${NUM_CURR_EVENTS}  # to avoid timeout, I only ask for NUM_CURR_EVENTS`;
         //TODO this query times out sometimes
         fetch(`https://query.wikidata.org/sparql?format=json&query=${encodeURIComponent(query)}`).then(response => response.json()).then(
@@ -252,6 +253,13 @@ function formatNumberOfYears(num: number): string {
     }
 }
 
+// s: startDate.getTime(), f: endDate.getTime(), t: now.getTime(), p: p from The Formula
+function updateDerivative(s: number, f: number, t: number, p: number) {
+    const element = document.getElementById("derivative")!;
+    const derivative = 1225.88 * (t - s) * (t - s) * Math.exp(-(20.3444 * (s - t) * (s - t) * (s - t)) / ((f - s) * (f - s) * (f - s))) / ((f - s) * (f - s) * (f - s));
+    element.textContent = `Derivative: ${derivative * MS_PER_YEAR - 1}`; // subtracting one to make it from current time, rather than of time ago
+}
+
 let currEventsLastUpdated = new Date(0); // a long time ago
 
 function update() {
@@ -316,6 +324,7 @@ function update() {
     updateRemainingTime(days, hours, minutes, seconds);
     updateXkcdDate(xkcdDate);
     updateTimeAgo(timeAgo);
+    updateDerivative(startDate.getTime(), endDate.getTime(), now.getTime(), p);
     if ((now.getTime() - currEventsLastUpdated.getTime()) > MS_PER_SEC * SEC_PER_MIN * 5) { // Every 5 minutes
         currEventsLastUpdated = now;
         updateCurrentEvents(now, T_ms);
