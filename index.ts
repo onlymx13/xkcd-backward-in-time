@@ -153,7 +153,7 @@ async function updateCurrentEvents(now: Date, T_ms: bigint): Promise<void> {
                     li.appendChild(p);
                     li.appendChild(p2);
                     currEventsList.appendChild(li);
-                    const wikipedia_url = event["article_en"]["value"].split("/");
+                    const wikipedia_url = event["article_en"]["value"].split("/wiki/");
                     const wikipedia_name = wikipedia_url[wikipedia_url.length - 1];
                     // Get an excerpt from the Wikipedia article
                     const api_url = `https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&origin=*&titles=${wikipedia_name}`;
