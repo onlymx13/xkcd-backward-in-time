@@ -5,4 +5,3 @@ Run for development: `npm run vite`
 TODO:
 * CSS
 * TODOs in the code/repo
-* Show the rate at which time is passing (derivative of T)
