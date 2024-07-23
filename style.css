@@ -2,6 +2,10 @@
     width: 80%;
 }
 
+#earth-image {
+    width: 533px;
+}
+
 #left-side-wrapper {
     float: left;
     width: 50%;
