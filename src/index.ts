@@ -84,7 +84,6 @@ async function updateCurrentEvents(now: Date, T_ms: bigint): Promise<void> {
                         // pages is an object with a single property. access it
                         p2.textContent = pages[Object.getOwnPropertyNames(pages)[0]]["extract"];
                     });
-                    //TODO: css
                 }
             }
         ).catch(e => {
