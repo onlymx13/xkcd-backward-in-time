@@ -67,16 +67,18 @@ async function updateCurrentEvents(now: Date, T_ms: bigint): Promise<void> {
                     currEventsList.removeChild(currEventsList.firstChild);
                 }
                 for (const event of json["results"]["bindings"]) {
+                    const wikipedia_url = event["article_en"]["value"];
+
                     const li = document.createElement("li");
                     const p = document.createElement("p");
-                    p.textContent = event["label"]["value"];
+                    p.innerHTML = `${event["label"]["value"]} (<a href="${wikipedia_url}">Wikipedia)`;
                     const p2 = document.createElement("p");
                     p2.textContent = "Loading description...";
                     li.appendChild(p);
                     li.appendChild(p2);
                     currEventsList.appendChild(li);
-                    const wikipedia_url = event["article_en"]["value"].split("/wiki/");
-                    const wikipedia_name = wikipedia_url[wikipedia_url.length - 1];
+                    const wikipedia_url_split = wikipedia_url.split("/wiki/");
+                    const wikipedia_name = wikipedia_url_split[wikipedia_url_split.length - 1];
                     // Get an excerpt from the Wikipedia article
                     const api_url = `https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&origin=*&titles=${wikipedia_name}`;
                     fetch(api_url).then(response => response.json()).then(json => {
