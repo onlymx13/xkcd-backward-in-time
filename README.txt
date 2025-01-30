@@ -7,3 +7,4 @@ Run for development: `npm run vite`
 TODO:
 * CSS
 * TODOs in the code/repo
+* show an analog clock spinning? analog calendar?
