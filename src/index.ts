@@ -17,7 +17,13 @@ function updateRemainingTime(days: number, hours: number, minutes: number, secon
 }
 
 function updateXkcdDate(date: MyDate): void {
-    document.getElementById("date")!.textContent = date.toString();
+    const dateDisplay = document.getElementById("date")!;
+    if (date.toString().startsWith("MyDate")) {
+        dateDisplay.hidden = true;
+    } else {
+        dateDisplay.textContent = date.toString();
+        dateDisplay.hidden = false;
+    }
 }
 
 function updateTimeAgo(timeAgo: string): void {
@@ -132,20 +138,52 @@ function updateEarthImage(yearsAgo: number): void {
         }
     }
 }
-const startDate = new Date(Date.UTC(2024, 5, 22, 12, 57)); // June 22, 2024 12:57:00 UTC
 
-const endDate = new Date(Date.UTC(2025, 0, 10, 0, 17)); // January 10, 2025 00:17:00 UTC
+const nowSlider = document.getElementById("set-now")! as HTMLInputElement;
 
-let lastInterval: NodeJS.Timeout | undefined;
+//TODO give some kind of warning when endDate < startDate
+let startDate: Date | undefined;
+let endDate: Date | undefined;
+
+if (localStorage.getItem("startDate")) {
+    startDate = new Date(localStorage.getItem("startDate")!);
+    (document.getElementById("start-date") as HTMLInputElement)!.value = localStorage.getItem("startDate")!;
+}
+
+document.getElementById("start-date")!.addEventListener("change", event => {
+    const newStartDate = (event.target as HTMLInputElement).value;
+    startDate = new Date(newStartDate);
+    localStorage.setItem("startDate", newStartDate);
+    nowSlider.min = startDate?.getTime().toString();
+    nowSlider.value = (new Date()).getTime().toString();
+});
+
+if (localStorage.getItem("endDate")) {
+    endDate = new Date(localStorage.getItem("endDate")!);
+    (document.getElementById("end-date") as HTMLInputElement)!.value = localStorage.getItem("endDate")!;
+}
+
+document.getElementById("end-date")!.addEventListener("change", event => {
+    const newEndDate = (event.target as HTMLInputElement).value;
+    endDate = new Date(newEndDate);
+    localStorage.setItem("endDate", newEndDate);
+    nowSlider.max = endDate?.getTime().toString();
+    nowSlider.value = (new Date()).getTime().toString();
+});
+
+if (startDate) nowSlider.min = startDate.getTime().toString();
+if (endDate) nowSlider.max = endDate.getTime().toString();
+nowSlider.value = (new Date()).getTime().toString();
+
+//const startDate = new Date(Date.UTC(2024, 5, 22, 12, 57)); // June 22, 2024 12:57:00 UTC
+//const endDate = new Date(Date.UTC(2025, 0, 10, 0, 17)); // January 10, 2025 00:17:00 UTC
+
 let getNow = function() : Date {
     nowSlider.value = (new Date()).getTime().toString();
     return new Date;
 };
-const nowSlider = document.getElementById("set-now")! as HTMLInputElement;
-nowSlider.min = startDate.getTime().toString();
-nowSlider.max = endDate.getTime().toString();
-nowSlider.value = (new Date()).getTime().toString();
 
+let lastInterval: NodeJS.Timeout | undefined;
 (document.getElementById("use-set-now")! as HTMLInputElement).addEventListener("change", function() {
     if (this.checked) {
         getNow = () => new Date(Number(nowSlider.value));
@@ -193,74 +231,83 @@ function updateDerivative(s: number, f: number, t: number, p: number) {
 let currEventsLastUpdated = (new Date(0)).getTime();; // a long time ago
 
 function update() {
-    const now = getNow();
+    if (startDate === undefined || endDate === undefined) {
+        // User has not selected both dates yet.
+        // We can't do anything, because there is no math to do.
+        document.getElementById("left-side-wrapper")!.hidden = true;
+        document.getElementById("current-events")!.hidden = true;
+    } else {
+        document.getElementById("left-side-wrapper")!.hidden = false;
+        document.getElementById("current-events")!.hidden = false;
+        const now = getNow();
 
-    // Calculate p, the percentage of the time that we have made it through so far
-    // Assuming we are in the timeframe specified,
-    // p is an ordinary number in [0, 1].
-    const p = (now.getTime() - startDate.getTime()) / (endDate.getTime() - startDate.getTime());
+        // Calculate p, the percentage of the time that we have made it through so far
+        // Assuming we are in the timeframe specified,
+        // p is an ordinary number in [0, 1].
+        const p = (now.getTime() - startDate.getTime()) / (endDate.getTime() - startDate.getTime());
 
-    // Calculate T from the formula in the xkcd comic.
-    // T is a positive value in years, according to the comic.
-    const T = Math.exp(20.3444 * (p * p * p) + 3) - Math.exp(3);
-    // Since years don't really make sense here, we convert this value to ms.
-    // Try to avoid floating-point imprecision by considering the integer and fractional
-    // parts of T separately. Use BigInt arithmetic for the integer parts.
-    //TODO is this necessary?
-    const T_integer = Math.floor(T);
-    const T_frac = T % 1;
-    const T_ms_int = BigInt(T_integer) * BigInt(MS_PER_YEAR);
-    const T_ms_frac = T_frac * MS_PER_YEAR;
-    const T_ms = T_ms_int + BigInt(Math.round(T_ms_frac));
+        // Calculate T from the formula in the xkcd comic.
+        // T is a positive value in years, according to the comic.
+        const T = Math.exp(20.3444 * (p * p * p) + 3) - Math.exp(3);
+        // Since years don't really make sense here, we convert this value to ms.
+        // Try to avoid floating-point imprecision by considering the integer and fractional
+        // parts of T separately. Use BigInt arithmetic for the integer parts.
+        //TODO is this necessary?
+        const T_integer = Math.floor(T);
+        const T_frac = T % 1;
+        const T_ms_int = BigInt(T_integer) * BigInt(MS_PER_YEAR);
+        const T_ms_frac = T_frac * MS_PER_YEAR;
+        const T_ms = T_ms_int + BigInt(Math.round(T_ms_frac));
 
-    const xkcdDate = MyDate.fromDate(now).addMs(-T_ms);
+        const xkcdDate = MyDate.fromDate(now).addMs(-T_ms);
 
-    /*
-    console.log(
-    `
-        start: ${startDate}
-        end: ${endDate}
-        now: ${now}
-        p = ${p}
-        T = ${T} years
-        = ${T_ms} ms
-        curr = ${xkcdDate}
-    `);
-    */
+        /*
+        console.log(
+        `
+            start: ${startDate}
+            end: ${endDate}
+            now: ${now}
+            p = ${p}
+            T = ${T} years
+            = ${T_ms} ms
+            curr = ${xkcdDate}
+        `);
+        */
 
-    const days = differenceInDays(endDate, now);
-    const hours = differenceInHours(endDate, now) % HR_PER_DAY; // TODO if there is DST going on this fucks shit up, see docs for differenceInFullDays
-    const minutes = differenceInMinutes(endDate, now) % MIN_PER_HR;
-    const seconds = differenceInSeconds(endDate, now) % SEC_PER_MIN;
+        const days = differenceInDays(endDate, now);
+        const hours = differenceInHours(endDate, now) % HR_PER_DAY; // TODO if there is DST going on this fucks shit up, see docs for differenceInFullDays
+        const minutes = differenceInMinutes(endDate, now) % MIN_PER_HR;
+        const seconds = differenceInSeconds(endDate, now) % SEC_PER_MIN;
 
-    /*
-    Calculate the display that shows how long ago the xkcd date is, relative to now.
-    */
-    let timeAgo: string;
-    try {
-        timeAgo = `${formatDuration(intervalToDuration({
-            start: xkcdDate.toDate(),
-            end: now
-        }))} ${(now.getTime() - xkcdDate.toDate().getTime()) % 1000} milliseconds ago`;
-    } catch(e) {
-        if (e instanceof RangeError) {
-            // date is too long ago to use ordinary Dates
-            timeAgo = `${formatNumberOfYears(T)} ago`;
-        } else {
-            throw(e);
+        /*
+        Calculate the display that shows how long ago the xkcd date is, relative to now.
+        */
+        let timeAgo: string;
+        try {
+            timeAgo = `${formatDuration(intervalToDuration({
+                start: xkcdDate.toDate(),
+                end: now
+            }))} ${(now.getTime() - xkcdDate.toDate().getTime()) % 1000} milliseconds ago`;
+        } catch(e) {
+            if (e instanceof RangeError) {
+                // date is too long ago to use ordinary Dates
+                timeAgo = `${formatNumberOfYears(T)} ago`;
+            } else {
+                throw(e);
+            }
         }
-    }
 
-    updateRemainingTime(days, hours, minutes, seconds);
-    updateXkcdDate(xkcdDate);
-    updateTimeAgo(timeAgo);
-    updateDerivative(startDate.getTime(), endDate.getTime(), now.getTime(), p);
-    const realNow = (new Date).getTime();
-    if ((realNow - currEventsLastUpdated) > MS_PER_SEC * SEC_PER_MIN * 5) { // Every 5 minutes
-        currEventsLastUpdated = realNow;
-        updateCurrentEvents(now, T_ms);
-    }
-    updateEarthImage(T);
+        updateRemainingTime(days, hours, minutes, seconds);
+        updateXkcdDate(xkcdDate);
+        updateTimeAgo(timeAgo);
+        updateDerivative(startDate.getTime(), endDate.getTime(), now.getTime(), p);
+        const realNow = (new Date).getTime();
+        if ((realNow - currEventsLastUpdated) > MS_PER_SEC * SEC_PER_MIN * 5) { // Every 5 minutes
+            currEventsLastUpdated = realNow;
+            updateCurrentEvents(now, T_ms);
+        }
+        updateEarthImage(T);
+}
 
     requestAnimationFrame(update);
 }
