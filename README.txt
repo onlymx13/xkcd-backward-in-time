@@ -10,3 +10,4 @@ TODO:
 * CSS
 * TODOs in the code/repo
 * show an analog clock spinning? analog calendar?
+* more explanation on the page about what is going on
