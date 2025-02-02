@@ -7,6 +7,7 @@ if [ $(ls -1 "$outdir" | wc -l) -eq 19881 ] && [ "$1" != "-f" ]
 then
     echo "Assets already present in $outdir (pass -f to re-extract them anyway)."
 else
+    echo "Extracting assets. This may take a very long time."
     rm -rf "$outdir/*"
     # Download the relevant section of the video
     #TODO can this be done in one pass? (without --exec)
